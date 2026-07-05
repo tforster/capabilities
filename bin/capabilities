@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+// capabilities — CLI entry point (see PRD §10 for subcommand spec)
+
+// System dependencies
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+// Local dependencies
+import { loadConfig } from "../lib/config.js";
+import { install, uninstall } from "../lib/install.js";
+import { status } from "../lib/status.js";
+import { sync } from "../lib/sync.js";
+import { runJj } from "../lib/jj.js";
+import { newSkill } from "../lib/new-skill.js";
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(scriptDir, "..");
+
+const [, , command, arg1, arg2] = process.argv;
+const harnessName = arg1;
+
+/**
+ * Runs the requested subcommand against the repo this script lives in.
+ *
+ * @returns {Promise<void>}
+ */
+async function main() {
+  if (command === "status") {
+    const config = await loadConfig(path.join(repoRoot, "capabilities.yaml"));
+    const report = await status({ config, capabilitiesRoot: repoRoot });
+    printStatus(report);
+    return;
+  }
+
+  if (command === "sync") {
+    await sync({ runJj: (args) => runJj(args, { cwd: repoRoot }) });
+    console.log("Synced.");
+    return;
+  }
+
+  if (command === "new" && arg1 === "skill") {
+    await newSkill(arg2, { capabilitiesRoot: repoRoot });
+    console.log(`Created traits/skills/${arg2}/SKILL.md.`);
+    return;
+  }
+
+  if (command !== "install" && command !== "uninstall") {
+    console.error(
+      "Usage: capabilities <install|uninstall> <harness>\n       capabilities status\n       capabilities sync\n       capabilities new skill <name>"
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const config = await loadConfig(path.join(repoRoot, "capabilities.yaml"));
+
+  if (command === "install") {
+    await install(harnessName, { config, capabilitiesRoot: repoRoot });
+    console.log(`Installed ${harnessName}.`);
+  } else {
+    await uninstall(harnessName, { config, capabilitiesRoot: repoRoot });
+    console.log(`Uninstalled ${harnessName}.`);
+  }
+}
+
+/**
+ * Prints a per-harness, per-category status report to stdout.
+ *
+ * @param {Record<string, Record<string, string>>} report - Output of `status()`.
+ * @returns {void}
+ */
+function printStatus(report) {
+  for (const [harnessName, categories] of Object.entries(report)) {
+    console.log(harnessName);
+    for (const [category, state] of Object.entries(categories)) {
+      console.log(`  ${category}: ${state}`);
+    }
+  }
+}
+
+main().catch((err) => {
+  console.error(err.message);
+  process.exitCode = 1;
+});

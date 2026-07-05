@@ -1,0 +1,26 @@
+{
+  "name": "capabilities",
+  "version": "0.1.0",
+  "description": "Single source of truth for workstation-global AI skills, agents, and instructions across coding harnesses.",
+  "license": "MIT",
+  "bin": {
+    "capabilities": "./bin/capabilities"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\"",
+    "lint": "oxlint",
+    "format": "oxfmt --write",
+    "format:check": "oxfmt --check",
+    "typecheck": "tsc --noEmit -p jsconfig.json"
+  },
+  "dependencies": {
+    "yaml": "^2.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.73.0",
+    "typescript": "^7.0.2"
+  }
+}
