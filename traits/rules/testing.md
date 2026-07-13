@@ -2,18 +2,18 @@
 applyTo: "tests/**,**/*.test.js"
 ---
 
-# Testing Standards
+# Testing Standards <!-- omit in toc -->
 
-## Test Runners
+## 1. Test Runners
 
 - **Backend / API / server-side**: Node.js built-in test runner (`node:test`) — no Jest, Mocha, or other frameworks
 - **Browser / DOM**: Playwright with latest Chromium — installed at project root, shared across workspaces
 
-## File Naming
+## 2. File Naming
 
 `*.test.js` — auto-discovered by the Node.js test runner.
 
-## Running Tests
+## 3. Running Tests
 
 ```bash
 node --test                                    # All tests
@@ -23,7 +23,7 @@ node --test --experimental-test-coverage       # With coverage (Node 20+)
 npm run test                                   # Project-defined test script
 ```
 
-## Test Structure
+## 4. Test Structure
 
 ```javascript
 import { strict as assert } from "assert";
@@ -44,14 +44,16 @@ describe("ComponentName", () => {
 });
 ```
 
-## Assertions
+When using npm workspaces for a mono repo each workspace will typically have its own tests folder for functional, unit and API tests. The project root will have a tests folder for end-to-end tests and tests that deliberately exercise the intersection of multiple workspaces.
+
+## 5. Assertions
 
 - `assert.strictEqual(actual, expected)` — exact equality
 - `assert.ok(value, message)` — truthiness
 - `assert.rejects(async () => {...})` — expected rejections
 - `assert.throws(() => {...})` — expected throws
 
-## Rules
+## 6. Rules
 
 - Always test error conditions — not just happy paths
 - Mock external dependencies (APIs, file system) where possible

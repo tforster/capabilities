@@ -6,7 +6,7 @@ applyTo: "**/*.js"
 
 > [!NOTE]
 > **Formatting rules** (indentation, quotes, line width, trailing commas, naming conventions) are
-> defined in `code-style.instructions.md`. Do not duplicate them here.
+> defined in `rules/code-style.md`. Do not duplicate them here.
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -18,7 +18,8 @@ applyTo: "**/*.js"
 - [6. File Headers](#6-file-headers)
 - [7. Async and Error Handling](#7-async-and-error-handling)
 - [8. Code Organisation](#8-code-organisation)
-- [9. Miscellaneous](#9-miscellaneous)
+- [9. Inline Comments](#9-inline-comments)
+- [10. Miscellaneous](#10-miscellaneous)
 
 ## 1. Runtime Targets
 
@@ -179,6 +180,6 @@ Keep each section focused and named for what it does, not how it does it.
 
 ## 10. Miscellaneous
 
-- Run `npm run lint` after every edit — see `code-style.instructions.md` for the full lint rule
-- The `.prettierrc` in the repo root defines all formatting; VS Code formats on save
+- Run `npm run lint` after every edit — see `rules/code-style.md` for the full lint rule
+- The `.oxfmtrc.json` in the repo root defines all formatting; VS Code formats on save
 - Do not mix CommonJS (`require`) and ESM (`import`) in the same file or package

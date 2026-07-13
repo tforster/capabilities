@@ -11,13 +11,9 @@
   - [Atlassian Document Format (ADF)](#atlassian-document-format-adf)
   - [Advanced: OAuth 2.0](#advanced-oauth-20)
 
----
-
 ## Why Custom Fields Are Tricky
 
 Jira stores custom fields by a generated ID (`customfield_XXXXX`) that is **unique per Jira instance**. The same field named "Acceptance Criteria" may be `customfield_10042` in one organisation and `customfield_10091` in another. You must discover the correct IDs for `https://your-base-url.atlassian.net` and export them as environment variables before the scripts can write to those fields.
-
----
 
 ## The Three Story Fields
 
@@ -32,8 +28,6 @@ All three accept **plain text**. Multi-line content uses `\n` as a separator:
 ```bash
 --ac "Given the user is logged in\nWhen they click Save\nThen the record is persisted"
 ```
-
----
 
 ## Discovering Field IDs
 
@@ -58,8 +52,6 @@ Custom fields matching "story" (2):
 
 The field you want is named exactly **"User Story"** and **"Acceptance Criteria"** — match the display name precisely.
 
----
-
 ## Configuring the Scripts
 
 Once you have the correct IDs, export them (and add to your shell profile):
@@ -73,8 +65,6 @@ export JIRA_FIELD_AC=customfield_XXXXX      # replace with real ID
 ```
 
 The scripts error early with a helpful message if a required env var is missing when you attempt to read or write that field.
-
----
 
 ## Atlassian Document Format (ADF)
 
@@ -106,8 +96,6 @@ ADF paragraph structure (for reference):
 ```
 
 If you need richer formatting (bullet lists, headings, code blocks), construct the ADF manually and pass it directly to the API. The REST API v3 reference: `https://developer.atlassian.com/cloud/jira/platform/rest/v3/`
-
----
 
 ## Advanced: OAuth 2.0
 

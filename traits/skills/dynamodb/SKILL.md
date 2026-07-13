@@ -152,10 +152,6 @@ This is an example of an HTML table format that clearly shows partition key, sor
 </table>
 ```
 
-```html
-### Step 5: Satisfy additional access patterns with secondary indexes and streams Once the primary key structure is defined, it will
-satisfy a number of access patterns. For any remaining read patterns, we should use secondary indexes. Rather than creating a new
-index for every pattern, we can overload secondary indexes using generic attribute names (e.g., GSI1PK and GSI1SK) to handle
-multiple access patterns within a single index. Additionally, DynamoDB Streams can be used for advanced scenarios like implementing
-reactive functionality.
-```
+### Step 5: Satisfy additional access patterns with secondary indexes and streams
+
+Once the primary key structure is defined, it will satisfy a number of access patterns. For any remaining read patterns, we should use secondary indexes. Rather than creating a new index for every pattern, we can overload secondary indexes using generic attribute names (e.g., GSI1PK and GSI1SK) to handle multiple access patterns within a single index. Additionally, DynamoDB Streams can be used for advanced scenarios like implementing reactive functionality.

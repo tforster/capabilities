@@ -19,7 +19,7 @@ metadata:
 
 ## 1. Determine the Category
 
-Ask: what is the user's intent when reading this document? See `diataxis.instructions.md` for the full category definitions. Quick guide:
+Ask: what is the user's intent when reading this document? See `rules/diataxis.md` for the full category definitions. Quick guide:
 
 | User intent | Category | Folder |
 | :--- | :--- | :--- |
@@ -143,7 +143,7 @@ Why things are the way they are.
 
 ## 3. Apply Formatting Rules
 
-Follow all rules in `markdown.instructions.md`. Key reminders for documentation:
+Follow all rules in `rules/markdown.md`, and use the `markdown` skill's scripts to generate the ToC and section numbers. Key reminders for documentation:
 
 - British/Canadian English: organise, colour, behaviour, centre, optimise
 - All code fences must specify a language (`bash`, `javascript`, `json`, `text`, etc.)

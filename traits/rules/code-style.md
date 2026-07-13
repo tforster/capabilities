@@ -2,11 +2,11 @@
 applyTo: "**"
 ---
 
-# Code Style Standards
+# Code Style Standards <!-- omit in toc -->
 
-All files in this project follow these formatting rules, enforced via ESLint and Prettier.
+All files in this project follow these formatting rules, enforced via oxlint and oxfmt.
 
-## Formatting
+## 1. Formatting
 
 - **Indentation**: 2 spaces — no tabs
 - **Line width**: 132 characters maximum
@@ -15,19 +15,19 @@ All files in this project follow these formatting rules, enforced via ESLint and
 - **Arrow parens**: Always include parentheses
 - **Line endings**: LF (Unix)
 
-## Language
+## 2. Language
 
 - Modern JavaScript (ESNext) — **not TypeScript**
 - ES Modules (`import`/`export`) — no CommonJS `require`
 - ES6 classes with `#` prefix for private members
 - JSDoc required on all functions, classes, and methods
 
-## Naming Conventions
+## 3. Naming Conventions
 
 - **Variables and instances**: camelCase
 - **Classes**: PascalCase — filename must match class name (e.g., `MyClass.js` exports `MyClass`)
 - **Files**: kebab-case for non-class files; PascalCase for class files
 
-## After Every Edit
+## 4. After Every Edit
 
 Run `npm run lint` and fix all reported errors before considering the task complete. VS Code formats on save — trigger a save to auto-format.

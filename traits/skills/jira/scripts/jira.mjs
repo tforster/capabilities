@@ -3,6 +3,7 @@
  * Jira CLI — create, read, update and search Jira Cloud issues.
  *
  * Prerequisites: set env vars JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN.
+ * Set JIRA_PROJECT for a default project key, or pass --project on every call.
  * For User Story / Acceptance Criteria fields also set JIRA_FIELD_STORY and JIRA_FIELD_AC.
  * Run `node discover-fields.mjs` to find the correct customfield_XXXXX IDs.
  *
@@ -12,14 +13,18 @@
  *   create [options]                     create a new issue
  *   update <issue-key> [options]         update fields and/or transition status
  *   search "<jql>" [--max <n>]           run a JQL search (default: 20 results)
+ *   comment add  <issue-key> <text>      add a comment
+ *   comment list <issue-key>             list comments
  *
  * Options for create / update:
- *   --project     <key>   project key (default: CA)
+ *   --project     <key>   project key (or set JIRA_PROJECT)
  *   --type        <name>  issue type  (default: Story)
  *   --summary     <text>  issue summary
  *   --description <text>  description field (plain text; \n becomes a new paragraph)
  *   --story       <text>  User Story custom field
  *   --ac          <text>  Acceptance Criteria custom field
+ *   --parent      <key>   parent issue key (required when --type Subtask)
+ *   --assignee    <email> assignee email address, or "me" for the authenticated user
  *   --status      <name>  transition to this status name (update only)
  */
 
@@ -28,7 +33,7 @@ import { parseArgs } from "node:util";
 
 // ── Environment ───────────────────────────────────────────────────────────────
 
-const { JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN, JIRA_FIELD_STORY, JIRA_FIELD_AC } = process.env;
+const { JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN, JIRA_PROJECT, JIRA_FIELD_STORY, JIRA_FIELD_AC } = process.env;
 
 if (!JIRA_BASE_URL || !JIRA_EMAIL || !JIRA_API_TOKEN) {
   console.error("Missing required env vars: JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN");
@@ -184,6 +189,16 @@ function fromAdf(adf) {
   return parts.join("").trim();
 }
 
+/**
+ * Resolve the "me" shorthand to the authenticated user's email.
+ *
+ * @param {string} assignee - Email address, or "me" for the authenticated user.
+ * @returns {string} Resolved email address.
+ */
+function resolveAssignee(assignee) {
+  return assignee.toLowerCase() === "me" ? JIRA_EMAIL : assignee;
+}
+
 // ── Commands ──────────────────────────────────────────────────────────────────
 
 /** Verify credentials and display the authenticated user. */
@@ -221,22 +236,27 @@ async function getIssue(key) {
  * Create a new Jira issue.
  *
  * @param {object} opts - Parsed CLI options.
- * @param {string} [opts.project] - Project key (default: CA).
+ * @param {string} [opts.project] - Project key (or set JIRA_PROJECT).
  * @param {string} [opts.type] - Issue type name (default: Story).
  * @param {string} [opts.summary] - Issue summary (required).
  * @param {string} [opts.description] - Description text.
  * @param {string} [opts.story] - User Story text.
  * @param {string} [opts.ac] - Acceptance Criteria text.
+ * @param {string} [opts.parent] - Parent issue key (required when type is Subtask).
+ * @param {string} [opts.assignee] - Assignee email, or "me".
  */
 async function createIssue(opts) {
-  const { project = "CA", type = "Story", summary, description, story, ac } = opts;
+  const { project, type = "Story", summary, description, story, ac, parent, assignee } = opts;
+  const projectKey = project || JIRA_PROJECT;
 
+  if (!projectKey) throw new Error("Set --project <key> or the JIRA_PROJECT env var");
   if (!summary) throw new Error("--summary is required");
   if (story && !JIRA_FIELD_STORY) throw new Error("Set JIRA_FIELD_STORY. Run: node discover-fields.mjs story");
   if (ac && !JIRA_FIELD_AC) throw new Error("Set JIRA_FIELD_AC. Run: node discover-fields.mjs acceptance");
+  if (type.toLowerCase() === "subtask" && !parent) throw new Error("--parent <key> is required when --type Subtask");
 
   const fields = {
-    project: { key: project },
+    project: { key: projectKey },
     issuetype: { name: type },
     summary,
   };
@@ -244,6 +264,8 @@ async function createIssue(opts) {
   if (description) fields.description = toAdf(description);
   if (story) fields[JIRA_FIELD_STORY] = toStoryAdf(story);
   if (ac) fields[JIRA_FIELD_AC] = toAcAdf(ac);
+  if (parent) fields.parent = { key: parent };
+  if (assignee) fields.assignee = { emailAddress: resolveAssignee(assignee) };
 
   const result = await api("POST", "/issue", { fields });
   console.log(`✓ Created ${result.key}: ${JIRA_BASE_URL}/browse/${result.key}`);
@@ -256,7 +278,7 @@ async function createIssue(opts) {
  * @param {object} opts - Fields to update.
  */
 async function updateIssue(key, opts) {
-  const { summary, description, story, ac } = opts;
+  const { summary, description, story, ac, parent, assignee } = opts;
 
   if (story && !JIRA_FIELD_STORY) throw new Error("Set JIRA_FIELD_STORY. Run: node discover-fields.mjs story");
   if (ac && !JIRA_FIELD_AC) throw new Error("Set JIRA_FIELD_AC. Run: node discover-fields.mjs acceptance");
@@ -267,9 +289,11 @@ async function updateIssue(key, opts) {
   if (description) fields.description = toAdf(description);
   if (story) fields[JIRA_FIELD_STORY] = toStoryAdf(story);
   if (ac) fields[JIRA_FIELD_AC] = toAcAdf(ac);
+  if (parent) fields.parent = { key: parent };
+  if (assignee) fields.assignee = { emailAddress: resolveAssignee(assignee) };
 
   if (Object.keys(fields).length === 0) {
-    console.error("Nothing to update. Provide --summary, --description, --story, or --ac.");
+    console.error("Nothing to update. Provide --summary, --description, --story, --ac, --parent, or --assignee.");
     process.exit(1);
   }
 
@@ -299,23 +323,62 @@ async function transitionIssue(key, statusName) {
 /**
  * Search for issues using JQL and display a summary table.
  *
+ * Uses `/search/jql`, the replacement for the retired `/search` endpoint. The new endpoint is
+ * token-paginated rather than offset-paginated and deliberately returns no `total`, so results are
+ * reported as a plain count and a `nextPageToken` is surfaced when more remain.
+ *
  * @param {string} jql - JQL query string.
  * @param {number} [max=20] - Maximum results to return.
  */
 async function searchIssues(jql, max = 20) {
-  const data = await api("POST", "/search", {
+  const data = await api("POST", "/search/jql", {
     jql,
     maxResults: Number(max),
     fields: ["summary", "status", "assignee", "issuetype", "priority"],
   });
 
-  console.log(`\nFound ${data.total} issue(s) (showing ${data.issues.length}):\n`);
+  const issues = data.issues ?? [];
+  console.log(`\nFound ${issues.length} issue(s):\n`);
 
-  for (const issue of data.issues) {
+  for (const issue of issues) {
     const f = issue.fields;
     const status = (f.status?.name ?? "?").padEnd(16);
     const type = (f.issuetype?.name ?? "?").padEnd(8);
     console.log(`  ${issue.key.padEnd(12)} [${status}] ${type} ${f.summary}`);
+  }
+
+  if (data.nextPageToken) {
+    console.log(`\n  … more results available — raise --max to see them.`);
+  }
+}
+
+/**
+ * Add a comment to an issue.
+ *
+ * @param {string} key - Issue key.
+ * @param {string} body - Comment text.
+ */
+async function addComment(key, body) {
+  await api("POST", `/issue/${key}/comment`, { body: toAdf(body) });
+  console.log(`✓ Commented on ${key}`);
+}
+
+/**
+ * List comments on an issue.
+ *
+ * @param {string} key - Issue key.
+ */
+async function listComments(key) {
+  const data = await api("GET", `/issue/${key}/comment`);
+
+  if (data.comments.length === 0) {
+    console.log("No comments.");
+    return;
+  }
+
+  for (const comment of data.comments) {
+    console.log(`\n${comment.author?.displayName ?? "Unknown"} — ${comment.created}`);
+    console.log(`  ${fromAdf(comment.body)}`);
   }
 }
 
@@ -328,12 +391,14 @@ const { values, positionals } = parseArgs({
   allowPositionals: true,
   strict: false,
   options: {
-    project: { type: "string", default: "CA" },
+    project: { type: "string" },
     type: { type: "string", default: "Story" },
     summary: { type: "string" },
     description: { type: "string" },
     story: { type: "string" },
     ac: { type: "string" },
+    parent: { type: "string" },
+    assignee: { type: "string" },
     status: { type: "string" },
     max: { type: "string", default: "20" },
   },
@@ -370,8 +435,23 @@ try {
       break;
     }
 
+    case "comment": {
+      const [sub, key, ...bodyParts] = positionals;
+      if (sub === "add") {
+        const body = bodyParts.join(" ");
+        if (!key || !body) throw new Error("Usage: jira.mjs comment add <issue-key> \"<text>\"");
+        await addComment(key, body);
+      } else if (sub === "list") {
+        if (!key) throw new Error("Usage: jira.mjs comment list <issue-key>");
+        await listComments(key);
+      } else {
+        throw new Error('Usage: jira.mjs comment add <issue-key> "<text>" | jira.mjs comment list <issue-key>');
+      }
+      break;
+    }
+
     default:
-      console.error("Commands: whoami | get | create | update | search");
+      console.error("Commands: whoami | get | create | update | search | comment");
       console.error("See SKILL.md for usage examples.");
       process.exit(1);
   }
